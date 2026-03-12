@@ -3,158 +3,238 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SparkPoint Premium</title>
+    <title>CryptoCapital — Private Access</title>
     <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
     <style>
         :root {
-            --neon-green: #00ff9d;
+            --primary: #00eaff;
+            --accent: #ff00aa;
             --gold: #ffd700;
-            --telegram-blue: #0088cc;
-            --bg-dark: #0f0f1b;
-            --card-bg: rgba(255, 255, 255, 0.03);
-            --border: rgba(255, 255, 255, 0.1);
+            --bg: #0a0a14;
+            --card: rgba(20, 20, 40, 0.6);
+            --border: rgba(0, 234, 255, 0.18);
         }
 
         body {
-            background-color: var(--bg-dark);
-            background-image: radial-gradient(circle at top right, #1a1a2e, transparent);
-            color: #fff;
-            font-family: 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0,234,255,0.08), transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(255,0,170,0.06), transparent 50%);
+            color: #f0f4ff;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             margin: 0;
-            padding: 20px 10px;
+            padding: 0;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        .container { max-width: 460px; margin: 0 auto; }
+        .ticker {
+            background: linear-gradient(90deg, #0f0f1f, #1a1a2e, #0f0f1f);
+            color: var(--primary);
+            font-weight: 600;
+            padding: 10px 0;
+            overflow: hidden;
+            white-space: nowrap;
+            border-bottom: 1px solid var(--border);
+        }
+        .ticker span {
+            display: inline-block;
+            padding-left: 100%;
+            animation: ticker 25s linear infinite;
+        }
+        @keyframes ticker {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
 
-        .header { text-align: center; margin-bottom: 30px; }
+        .container { max-width: 480px; margin: 0 auto; padding: 0 16px; }
+
+        .header {
+            text-align: center;
+            padding: 30px 0 20px;
+        }
         .logo {
-            font-size: 2.2rem;
-            font-weight: 800;
-            color: #fff;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+            font-size: 3.2rem;
+            font-weight: 900;
+            background: linear-gradient(90deg, var(--primary), var(--accent), var(--gold));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: 4px;
+            text-shadow: 0 0 30px rgba(0,234,255,0.4);
+            animation: pulse 4s infinite alternate;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
+            gap: 14px;
         }
-        .logo span { font-size: 2.8rem; filter: drop-shadow(0 0 10px var(--gold)); }
-        
-        .wallet-addr {
-            font-size: 0.85rem;
-            color: var(--gold);
-            background: rgba(255, 215, 0, 0.1);
-            padding: 8px 16px;
-            border-radius: 20px;
-            margin-top: 12px;
-            display: inline-block;
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            font-family: monospace;
+        .logo span { font-size: 3.8rem; }
+        @keyframes pulse {
+            0% { opacity: 0.92; text-shadow: 0 0 20px rgba(0,234,255,0.3); }
+            100% { opacity: 1; text-shadow: 0 0 40px rgba(0,234,255,0.6); }
         }
 
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .wallet-addr {
+            font-size: 0.9rem;
+            color: var(--gold);
+            background: rgba(255,215,0,0.08);
+            padding: 10px 18px;
+            border-radius: 30px;
+            margin: 16px auto 0;
+            display: inline-block;
+            border: 1px solid rgba(255,215,0,0.25);
+            font-family: monospace;
+            backdrop-filter: blur(8px);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 24px 0;
+        }
         .stat-card {
-            background: var(--card-bg);
+            background: var(--card);
+            backdrop-filter: blur(12px);
             border: 1px solid var(--border);
             border-radius: 20px;
-            padding: 16px;
+            padding: 18px;
             text-align: center;
-            position: relative;
-            overflow: hidden;
+            transition: all 0.3s;
         }
-        .stat-card::after {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 3px;
-            background: linear-gradient(90deg, transparent, var(--neon-green), transparent);
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(0,234,255,0.12);
         }
-        .stat-label { font-size: 0.75rem; color: #888; text-transform: uppercase; margin-bottom: 6px; display: block; }
-        .stat-value { font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .stat-label { font-size: 0.78rem; color: #a0a0ff; text-transform: uppercase; margin-bottom: 8px; }
+        .stat-value { font-size: 1.7rem; font-weight: 700; color: var(--primary); }
 
         .matrix-box {
-            background: var(--card-bg);
+            background: var(--card);
+            backdrop-filter: blur(12px);
             border: 1px solid var(--border);
             border-radius: 24px;
-            padding: 20px;
-            margin-bottom: 25px;
-            max-height: 520px;
+            padding: 24px 18px;
+            margin: 24px 0;
+            max-height: 540px;
             overflow-y: auto;
             scrollbar-width: thin;
         }
-        .matrix-box::-webkit-scrollbar { width: 6px; }
-        .matrix-box::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+        .matrix-box::-webkit-scrollbar { width: 5px; }
+        .matrix-box::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; opacity: 0.5; }
 
         .lvl-header {
             display: flex; justify-content: space-between; align-items: center;
-            margin: 24px 0 12px; border-bottom: 1px solid var(--border); padding-bottom: 10px;
+            margin: 28px 0 14px; padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
         }
-        .lvl-header:first-child { margin-top: 0; }
-        .lvl-name { font-size: 1rem; font-weight: bold; color: var(--neon-green); }
-        .lvl-slots { font-size: 0.8rem; color: #aaa; }
+        .lvl-name { font-size: 1.1rem; font-weight: 700; color: var(--primary); letter-spacing: 1px; }
+        .lvl-slots { font-size: 0.85rem; color: #a0a0ff; }
 
-        .dots { 
-            display: flex; 
-            justify-content: center; 
-            flex-wrap: wrap; 
-            gap: 10px; 
-            margin: 12px 0; 
+        .dots {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 16px 0;
         }
         .dot {
-            width: 26px; height: 26px; border-radius: 50%;
-            background: #1a1a2e; border: 1px solid #333;
-            transition: all 0.4s ease;
-            position: relative;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: #101022;
+            border: 1px solid #202040;
+            transition: all 0.5s ease;
         }
         .dot.active {
-            background: var(--neon-green);
-            box-shadow: 0 0 16px var(--neon-green);
+            background: linear-gradient(135deg, var(--primary), #00b8ff);
+            box-shadow: 0 0 20px rgba(0,234,255,0.7), inset 0 0 8px rgba(255,255,255,0.4);
             border: none;
-            transform: scale(1.08);
+            transform: scale(1.12);
         }
 
-        .box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
-        .btn {
-            width: 100%; padding: 16px; border-radius: 14px; border: none;
-            font-weight: bold; cursor: pointer; transition: all 0.3s;
-            font-size: 0.95rem; text-transform: uppercase;
-            display: block; text-decoration: none; text-align: center;
-            box-sizing: border-box;
+        .box {
+            background: var(--card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 24px;
+            margin: 24px 0;
         }
-        .btn-green { background: var(--neon-green); color: #000; box-shadow: 0 4px 15px rgba(0, 255, 157, 0.3); }
-        .btn-green:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 255, 157, 0.45); }
-        
-        .btn-tg { 
-            background: var(--telegram-blue); color: #fff; margin-top: 12px; 
-            box-shadow: 0 4px 15px rgba(0, 136, 204, 0.3);
+        .btn {
+            width: 100%;
+            padding: 18px;
+            border-radius: 16px;
+            border: none;
+            font-weight: 700;
+            font-size: 1rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.4s;
+            letter-spacing: 1px;
+        }
+        .btn-green {
+            background: linear-gradient(90deg, var(--primary), #00c8ff);
+            color: #000;
+            box-shadow: 0 8px 25px rgba(0,234,255,0.35);
+        }
+        .btn-green:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 35px rgba(0,234,255,0.55);
+        }
+        .btn-tg {
+            background: linear-gradient(90deg, #0088cc, #00aaff);
+            color: white;
+            margin-top: 12px;
+            box-shadow: 0 8px 25px rgba(0,136,204,0.35);
         }
 
         input {
-            width: 100%; padding: 14px; background: #000; border: 1px solid #333;
-            border-radius: 12px; color: #fff; margin: 12px 0; box-sizing: border-box;
-            font-family: monospace; font-size: 0.95rem;
+            width: 100%;
+            padding: 16px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #303060;
+            border-radius: 14px;
+            color: #e0e0ff;
+            margin: 12px 0;
+            font-family: monospace;
+            font-size: 1rem;
         }
 
-        .inviter-info { text-align: center; font-size: 0.9rem; color: #aaa; margin: 15px 0; padding: 12px; border-radius: 12px; background: rgba(0,255,157,0.05); }
+        .inviter-info {
+            text-align: center;
+            font-size: 0.95rem;
+            color: #b0b0ff;
+            margin: 20px 0;
+            padding: 14px;
+            border-radius: 16px;
+            background: rgba(0,234,255,0.06);
+            border: 1px solid var(--border);
+        }
+
         .hidden { display: none; }
     </style>
 </head>
 <body>
 
+<div class="ticker">
+    <span>CRYPTOCAPITAL — PRIVATE ROUND 2026 • LIMITED SLOTS • PRICE INCREASE SOON • CRYPTOCAPITAL — PRIVATE ROUND 2026 • LIMITED SLOTS • PRICE INCREASE SOON • </span>
+</div>
+
 <div class="container">
     <div class="header">
-        <div class="logo"><span>💰</span> SPARKPOINT</div>
+        <div class="logo"><span>₿</span> CRYPTOCAPITAL</div>
         <div id="addrDisplay" class="wallet-addr hidden">Not Connected</div>
-        <button id="connBtn" class="btn btn-green" style="margin-top: 18px;" onclick="connect()">Connect Wallet</button>
-        <a href="https://t.me/spartpoint/32" target="_blank" class="btn btn-tg">📖 Как оплатить? (Инструкция)</a>
+        <button id="connBtn" class="btn btn-green" style="margin: 24px 0 12px;" onclick="connect()">Connect Wallet</button>
+        <a href="https://t.me/spartpoint/32" target="_blank" class="btn btn-tg">📖 Payment Guide</a>
     </div>
 
     <div class="stats-grid">
         <div class="stat-card">
-            <span class="stat-label">🚀 Level</span>
+            <span class="stat-label">Current Level</span>
             <div class="stat-value" id="valLvl">-</div>
         </div>
         <div class="stat-card">
-            <span class="stat-label">💎 Internal Balance</span>
+            <span class="stat-label">Internal Balance</span>
             <div class="stat-value" id="valBal">0.0000 BNB</div>
         </div>
     </div>
@@ -162,34 +242,36 @@
     <div class="matrix-box" id="matrixBox"></div>
 
     <div id="inviterBox" class="inviter-info hidden">
-        🤝 Пригласил: <br><span id="invAddr" style="color: var(--neon-green); font-family: monospace;"></span>
+        Invited by: <br><span id="invAddr" style="color: var(--primary); font-family: monospace;"></span>
     </div>
 
     <div id="regArea" class="box">
-        <label style="font-size: 0.85rem; color: #aaa;">REFERRER ADDRESS</label>
+        <label style="font-size: 0.9rem; color: #b0b0ff; display: block; margin-bottom: 8px;">REFERRER ADDRESS</label>
         <input type="text" id="refInput" placeholder="0x000...0000">
-        <button class="btn btn-green" onclick="register()">Activate Matrix (0.001 BNB)</button>
+        <button class="btn btn-green" onclick="register()">Activate Access (0.001 BNB)</button>
     </div>
 
     <div id="linkArea" class="box hidden">
-        <label style="font-size: 0.85rem; color: #aaa;">ВАША ПРИГЛАСИТЕЛЬНАЯ ССЫЛКА (макс 2 чел.)</label>
+        <label style="font-size: 0.9rem; color: #b0b0ff; display: block; margin-bottom: 8px;">YOUR INVITE LINK (max 2)</label>
         <input type="text" id="refLink" readonly>
-        <button id="copyBtn" class="btn btn-green" onclick="copy()">Копировать ссылку 🔗</button>
+        <button id="copyBtn" class="btn btn-green" onclick="copy()">Copy Link 🔗</button>
     </div>
 
     <div id="adminPanel" class="box hidden" style="border-color: var(--gold);">
-        <b style="color: var(--gold);">👑 ADMIN PANEL</b>
+        <b style="color: var(--gold); display: block; margin-bottom: 12px;">ADMIN CONTROL</b>
         <input type="text" id="admU" placeholder="User Address (0x...)">
         <input type="text" id="admR" placeholder="Referrer Address (0x...)">
-        <button class="btn" style="background: var(--gold); color: #000;" onclick="adminAdd()">Add Free User</button>
+        <button class="btn" style="background: linear-gradient(90deg, var(--gold), #ffcc00); color: #000; margin-top: 12px;" onclick="adminAdd()">Add Free User</button>
     </div>
 </div>
 
 <script>
+// ──────────────────────────────────────────────
+// КОНФИГ УРОВНЕЙ (без изменений)
 const LEVEL_SLOTS = [0, 2, 6, 14, 2, 6, 14, 2, 6, 14];
 
+// ──────────────────────────────────────────────
 const CONTRACT_ADDR = '0x2c4326c0577e8Ef8679B302eAd3603Df8224B7ed';
-
 const ABI = [ /* твой оригинальный ABI без изменений */ 
     {"inputs":[{"internalType":"address","name":"_user","type":"address"},{"internalType":"address","name":"_referrer","type":"address"}],"name":"adminAddUser","outputs":[],"stateMutability":"nonpayable","type":"function"},
     {"inputs":[{"internalType":"address","name":"_referrer","type":"address"}],"name":"register","outputs":[],"stateMutability":"payable","type":"function"},
@@ -206,7 +288,7 @@ const ABI = [ /* твой оригинальный ABI без изменений
 
 let web3, contract, userAccount;
 
-async function connect() {
+async function connect() { /* без изменений */ 
     if (!window.ethereum) return alert("Установите MetaMask / Trust Wallet");
     try {
         const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -226,7 +308,7 @@ async function connect() {
     }
 }
 
-async function updateDashboard() {
+async function updateDashboard() { /* без изменений в логике */ 
     if (!userAccount) return;
 
     try {
@@ -248,7 +330,7 @@ async function updateDashboard() {
             document.getElementById('inviterBox').classList.remove('hidden');
             const ref = data.referrer;
             document.getElementById('invAddr').innerText = 
-                ref === '0x0000000000000000000000000000000000000000' ? 'Нет' : 
+                ref === '0x0000000000000000000000000000000000000000' ? 'None' : 
                 ref.substring(0,8) + '...' + ref.substring(36);
 
             renderStructure(parseInt(data.level), parseInt(data.partnersCount || 0), parseInt(data.structureCount || 0));
@@ -258,9 +340,9 @@ async function updateDashboard() {
             const copyBtn = document.getElementById('copyBtn');
 
             if (partners >= 2) {
-                linkInput.value = "ЛИМИТ 2/2 ДОСТИГНУТ";
-                linkInput.style.color = "#ff5555";
-                copyBtn.innerText = "❌ Лимит исчерпан";
+                linkInput.value = "LIMIT 2/2 REACHED";
+                linkInput.style.color = "#ff6b6b";
+                copyBtn.innerText = "❌ Limit Reached";
                 copyBtn.disabled = true;
                 copyBtn.style.background = "#222";
                 copyBtn.style.color = "#666";
@@ -269,8 +351,8 @@ async function updateDashboard() {
                 linkInput.value = link;
                 linkInput.style.color = "#fff";
                 copyBtn.disabled = false;
-                copyBtn.innerText = "Копировать ссылку 🔗";
-                copyBtn.style.background = "var(--neon-green)";
+                copyBtn.innerText = "Copy Link 🔗";
+                copyBtn.style.background = "linear-gradient(90deg, var(--primary), #00c8ff)";
                 copyBtn.style.color = "#000";
             }
         }
@@ -283,8 +365,7 @@ function renderStructure(currentLevel, partnersCount, structureCount) {
     const container = document.getElementById('matrixBox');
     container.innerHTML = '';
 
-    let filledL1 = Math.min(partnersCount, LEVEL_SLOTS[1]); // прямые
-    let remaining = structureCount; // остаток - это глубина
+    let remaining = structureCount;
 
     for (let lvl = 1; lvl <= 9; lvl++) {
         const slots = LEVEL_SLOTS[lvl];
@@ -303,12 +384,11 @@ function renderStructure(currentLevel, partnersCount, structureCount) {
         let filledThisLevel = 0;
 
         if (lvl === 1) {
-            filledThisLevel = filledL1;
+            filledThisLevel = Math.min(partnersCount, slots);
         } else {
-            // Для уровней 2+: считаем "пришедших" на уровень как часть remaining
-            // Примерная эмуляция: на L2 \~ remaining / 2 (от детей)
-            filledThisLevel = Math.min(remaining, slots);
-            remaining = Math.max(0, remaining - filledThisLevel * 2); // грубо имитируем рост
+            // Имитация: на каждом следующем уровне заполняется примерно половина от remaining
+            filledThisLevel = Math.min(Math.floor(remaining / 2), slots);
+            remaining = Math.max(0, remaining - filledThisLevel);
         }
 
         for (let i = 0; i < slots; i++) {
@@ -321,14 +401,15 @@ function renderStructure(currentLevel, partnersCount, structureCount) {
         container.appendChild(dotsDiv);
 
         if (lvl > currentLevel) {
-            header.style.opacity = '0.5';
-            dotsDiv.style.opacity = '0.4';
+            header.style.opacity = '0.45';
+            dotsDiv.style.opacity = '0.35';
         }
     }
 }
 
+// register, adminAdd, copy — без изменений
 async function register() {
-    if (!userAccount) return alert("Сначала подключите кошелёк");
+    if (!userAccount) return alert("Connect wallet first");
 
     let referrer = document.getElementById('refInput').value.trim();
     if (!referrer || !web3.utils.isAddress(referrer)) {
@@ -340,11 +421,11 @@ async function register() {
             from: userAccount,
             value: web3.utils.toWei('0.001', 'ether')
         });
-        alert("Пакет активирован!");
+        alert("Access activated!");
         updateDashboard();
     } catch(e) {
         console.error(e);
-        alert("Ошибка: " + (e.message || "Транзакция отклонена"));
+        alert("Error: " + (e.message || "Transaction rejected"));
     }
 }
 
@@ -354,24 +435,24 @@ async function adminAdd() {
     const refAddr = document.getElementById('admR').value.trim();
 
     if (!web3.utils.isAddress(userAddr) || !web3.utils.isAddress(refAddr)) {
-        return alert("Некорректный адрес");
+        return alert("Invalid address");
     }
 
     try {
         await contract.methods.adminAddUser(userAddr, refAddr).send({ from: userAccount });
-        alert("Пользователь добавлен бесплатно");
+        alert("User added for free");
         updateDashboard();
     } catch(e) {
-        alert("Ошибка: " + e.message);
+        alert("Error: " + e.message);
     }
 }
 
 function copy() {
     const input = document.getElementById('refLink');
-    if (input.value.includes("ЛИМИТ")) return;
+    if (input.value.includes("LIMIT")) return;
     input.select();
     navigator.clipboard.writeText(input.value);
-    alert("Ссылка скопирована!");
+    alert("Link copied!");
 }
 
 window.onload = () => {
