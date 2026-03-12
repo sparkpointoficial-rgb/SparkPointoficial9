@@ -27,7 +27,6 @@
 
         .container { max-width: 460px; margin: 0 auto; }
 
-        /* HEADER */
         .header { text-align: center; margin-bottom: 30px; }
         .logo {
             font-size: 2.2rem;
@@ -55,7 +54,6 @@
             font-family: monospace;
         }
 
-        /* STATS */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
         .stat-card {
             background: var(--card-bg);
@@ -73,7 +71,6 @@
         .stat-label { font-size: 0.75rem; color: #888; text-transform: uppercase; margin-bottom: 6px; display: block; }
         .stat-value { font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-        /* MATRIX */
         .matrix-box {
             background: var(--card-bg);
             border: 1px solid var(--border);
@@ -115,7 +112,6 @@
             transform: scale(1.08);
         }
 
-        /* BUTTONS & INPUTS */
         .box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
         .btn {
             width: 100%; padding: 16px; border-radius: 14px; border: none;
@@ -163,9 +159,7 @@
         </div>
     </div>
 
-    <div class="matrix-box" id="matrixBox">
-        <!-- Уровни генерируются в JS -->
-    </div>
+    <div class="matrix-box" id="matrixBox"></div>
 
     <div id="inviterBox" class="inviter-info hidden">
         🤝 Пригласил: <br><span id="invAddr" style="color: var(--neon-green); font-family: monospace;"></span>
@@ -192,14 +186,11 @@
 </div>
 
 <script>
-// ──────────────────────────────────────────────
-// КОНФИГ УРОВНЕЙ (точно по твоему описанию)
-const LEVEL_SLOTS = [0, 2, 6, 14, 2, 6, 14, 2, 6, 14]; // индекс 1..9
+const LEVEL_SLOTS = [0, 2, 6, 14, 2, 6, 14, 2, 6, 14];
 
-// ──────────────────────────────────────────────
 const CONTRACT_ADDR = '0x2c4326c0577e8Ef8679B302eAd3603Df8224B7ed';
 
-const ABI = [
+const ABI = [ /* твой оригинальный ABI без изменений */ 
     {"inputs":[{"internalType":"address","name":"_user","type":"address"},{"internalType":"address","name":"_referrer","type":"address"}],"name":"adminAddUser","outputs":[],"stateMutability":"nonpayable","type":"function"},
     {"inputs":[{"internalType":"address","name":"_referrer","type":"address"}],"name":"register","outputs":[],"stateMutability":"payable","type":"function"},
     {"inputs":[],"name":"admin","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
@@ -254,17 +245,14 @@ async function updateDashboard() {
             document.getElementById('valBal').innerText = 
                 parseFloat(web3.utils.fromWei(data.internalBalance || 0, 'ether')).toFixed(4) + " BNB";
 
-            // Пригласитель
             document.getElementById('inviterBox').classList.remove('hidden');
             const ref = data.referrer;
             document.getElementById('invAddr').innerText = 
                 ref === '0x0000000000000000000000000000000000000000' ? 'Нет' : 
                 ref.substring(0,8) + '...' + ref.substring(36);
 
-            // Генерация структуры
-            renderStructure(parseInt(data.level), parseInt(data.structureCount || 0));
+            renderStructure(parseInt(data.level), parseInt(data.partnersCount || 0), parseInt(data.structureCount || 0));
 
-            // Ссылка
             const partners = parseInt(data.partnersCount || 0);
             const linkInput = document.getElementById('refLink');
             const copyBtn = document.getElementById('copyBtn');
@@ -291,11 +279,12 @@ async function updateDashboard() {
     }
 }
 
-function renderStructure(currentLevel, totalFilled) {
+function renderStructure(currentLevel, partnersCount, structureCount) {
     const container = document.getElementById('matrixBox');
     container.innerHTML = '';
 
-    let remaining = totalFilled;
+    let filledL1 = Math.min(partnersCount, LEVEL_SLOTS[1]); // прямые
+    let remaining = structureCount; // остаток - это глубина
 
     for (let lvl = 1; lvl <= 9; lvl++) {
         const slots = LEVEL_SLOTS[lvl];
@@ -311,8 +300,16 @@ function renderStructure(currentLevel, totalFilled) {
         const dotsDiv = document.createElement('div');
         dotsDiv.className = 'dots';
 
-        let filledThisLevel = Math.min(remaining, slots);
-        remaining -= filledThisLevel;
+        let filledThisLevel = 0;
+
+        if (lvl === 1) {
+            filledThisLevel = filledL1;
+        } else {
+            // Для уровней 2+: считаем "пришедших" на уровень как часть remaining
+            // Примерная эмуляция: на L2 \~ remaining / 2 (от детей)
+            filledThisLevel = Math.min(remaining, slots);
+            remaining = Math.max(0, remaining - filledThisLevel * 2); // грубо имитируем рост
+        }
 
         for (let i = 0; i < slots; i++) {
             const dot = document.createElement('div');
@@ -323,7 +320,6 @@ function renderStructure(currentLevel, totalFilled) {
 
         container.appendChild(dotsDiv);
 
-        // Если уровень > текущего — делаем тусклее
         if (lvl > currentLevel) {
             header.style.opacity = '0.5';
             dotsDiv.style.opacity = '0.4';
