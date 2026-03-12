@@ -167,7 +167,6 @@
         Invited by: <span id="invAddr" style="color:#00f7ff;font-family:monospace;"></span>
     </div>
 
-    <!-- Всё остальное (regArea, linkArea, adminPanel) — точно как в твоём старом коде -->
     <div id="regArea" class="box" style="background:var(--card);padding:20px;border-radius:20px;margin:20px 0;">
         <label style="color:#aaa;font-size:0.9rem;">REFERRER</label>
         <input type="text" id="refInput" placeholder="0x...">
@@ -181,18 +180,204 @@
     </div>
 
     <div id="adminPanel" class="box hidden" style="border:2px solid #ffd700;">
-        <!-- твой админ-панель без изменений -->
+        <b style="color:#ffd700;display:block;margin-bottom:12px;">ADMIN CONTROL</b>
+        <input type="text" id="admU" placeholder="User Address (0x...)">
+        <input type="text" id="admR" placeholder="Referrer Address (0x...)">
+        <button class="btn" style="background:linear-gradient(90deg,#ffd700,#ffcc00);color:#000;margin-top:12px;" onclick="adminAdd()">Add Free User</button>
     </div>
 </div>
 
 <script>
-// ВСЯ ЛОГИКА И ФУНКЦИИ — 100% как в твоём последнем рабочем коде (renderStructure, connect, updateDashboard и т.д.)
-// Я не трогал ни одну функцию, только дизайн.
-
-const LEVEL_SLOTS = [0,2,6,14,2,6,14,2,6,14];
+const LEVEL_SLOTS = [0, 2, 6, 14, 2, 6, 14, 2, 6, 14];
 const CONTRACT_ADDR = '0x2c4326c0577e8Ef8679B302eAd3603Df8224B7ed';
-// ... (весь твой скрипт ниже остаётся точно таким же, как в предыдущей версии)
 
+const ABI = [
+    {"inputs":[{"internalType":"address","name":"_user","type":"address"},{"internalType":"address","name":"_referrer","type":"address"}],"name":"adminAddUser","outputs":[],"stateMutability":"nonpayable","type":"function"},
+    {"inputs":[{"internalType":"address","name":"_referrer","type":"address"}],"name":"register","outputs":[],"stateMutability":"payable","type":"function"},
+    {"inputs":[],"name":"admin","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},
+    {"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"users","outputs":[
+        {"internalType":"uint256","name":"level","type":"uint256"},
+        {"internalType":"address","name":"referrer","type":"address"},
+        {"internalType":"uint256","name":"partnersCount","type":"uint256"},
+        {"internalType":"uint256","name":"structureCount","type":"uint256"},
+        {"internalType":"uint256","name":"internalBalance","type":"uint256"},
+        {"internalType":"bool","name":"exists","type":"bool"}
+    ],"stateMutability":"view","type":"function"}
+];
+
+let web3, contract, userAccount;
+
+async function connect() {
+    if (!window.ethereum) return alert("Установите MetaMask / Trust Wallet");
+    try {
+        const accs = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        userAccount = accs[0];
+        web3 = new Web3(window.ethereum);
+        contract = new web3.eth.Contract(ABI, CONTRACT_ADDR);
+
+        document.getElementById('connBtn').classList.add('hidden');
+        document.getElementById('addrDisplay').classList.remove('hidden');
+        document.getElementById('addrDisplay').innerText = 
+            userAccount.substring(0,6) + '...' + userAccount.substring(38);
+
+        updateDashboard();
+    } catch(e) {
+        console.error(e);
+        alert("Ошибка подключения");
+    }
+}
+
+async function updateDashboard() {
+    if (!userAccount) return;
+
+    try {
+        const data = await contract.methods.users(userAccount).call();
+        const adminAddr = await contract.methods.admin().call();
+
+        if (userAccount.toLowerCase() === adminAddr.toLowerCase()) {
+            document.getElementById('adminPanel').classList.remove('hidden');
+        }
+
+        if (data.exists) {
+            document.getElementById('regArea').classList.add('hidden');
+            document.getElementById('linkArea').classList.remove('hidden');
+
+            document.getElementById('valLvl').innerText = data.level;
+            document.getElementById('valBal').innerText = 
+                parseFloat(web3.utils.fromWei(data.internalBalance || 0, 'ether')).toFixed(4) + " BNB";
+
+            document.getElementById('inviterBox').classList.remove('hidden');
+            const ref = data.referrer;
+            document.getElementById('invAddr').innerText = 
+                ref === '0x0000000000000000000000000000000000000000' ? 'None' : 
+                ref.substring(0,8) + '...' + ref.substring(36);
+
+            renderStructure(parseInt(data.level), parseInt(data.partnersCount || 0), parseInt(data.structureCount || 0));
+
+            const partners = parseInt(data.partnersCount || 0);
+            const linkInput = document.getElementById('refLink');
+            const copyBtn = document.getElementById('copyBtn');
+
+            if (partners >= 2) {
+                linkInput.value = "LIMIT 2/2 REACHED";
+                linkInput.style.color = "#ff6b6b";
+                copyBtn.innerText = "❌ Limit Reached";
+                copyBtn.disabled = true;
+                copyBtn.style.background = "#222";
+                copyBtn.style.color = "#666";
+            } else {
+                const link = window.location.origin + window.location.pathname + "?ref=" + userAccount;
+                linkInput.value = link;
+                linkInput.style.color = "#fff";
+                copyBtn.disabled = false;
+                copyBtn.innerText = "Copy Link";
+                copyBtn.style.background = "linear-gradient(90deg, var(--neon), #00c8ff)";
+                copyBtn.style.color = "#000";
+            }
+        }
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+function renderStructure(currentLevel, partnersCount, structureCount) {
+    const container = document.getElementById('matrixBox');
+    container.innerHTML = '';
+
+    let remaining = structureCount;
+
+    for (let lvl = 1; lvl <= 9; lvl++) {
+        const slots = LEVEL_SLOTS[lvl];
+
+        const header = document.createElement('div');
+        header.className = 'lvl-header';
+        header.innerHTML = `
+            <span class="lvl-name">LEVEL ${lvl}</span>
+            <span class="lvl-slots">${slots} SLOTS</span>
+        `;
+        container.appendChild(header);
+
+        const dotsDiv = document.createElement('div');
+        dotsDiv.className = 'dots';
+
+        let filledThisLevel = 0;
+
+        if (lvl === 1) {
+            filledThisLevel = Math.min(partnersCount, slots);
+        } else {
+            filledThisLevel = Math.min(Math.floor(remaining / 2), slots);
+            remaining = Math.max(0, remaining - filledThisLevel);
+        }
+
+        for (let i = 0; i < slots; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'dot';
+            if (i < filledThisLevel) dot.classList.add('active');
+            dotsDiv.appendChild(dot);
+        }
+
+        container.appendChild(dotsDiv);
+
+        if (lvl > currentLevel) {
+            header.style.opacity = '0.45';
+            dotsDiv.style.opacity = '0.35';
+        }
+    }
+}
+
+async function register() {
+    if (!userAccount) return alert("Connect wallet first");
+
+    let referrer = document.getElementById('refInput').value.trim();
+    if (!referrer || !web3.utils.isAddress(referrer)) {
+        referrer = '0x0000000000000000000000000000000000000000';
+    }
+
+    try {
+        await contract.methods.register(referrer).send({
+            from: userAccount,
+            value: web3.utils.toWei('0.001', 'ether')
+        });
+        alert("Node activated!");
+        updateDashboard();
+    } catch(e) {
+        console.error(e);
+        alert("Error: " + (e.message || "Transaction rejected"));
+    }
+}
+
+async function adminAdd() {
+    if (!userAccount) return;
+    const userAddr = document.getElementById('admU').value.trim();
+    const refAddr = document.getElementById('admR').value.trim();
+
+    if (!web3.utils.isAddress(userAddr) || !web3.utils.isAddress(refAddr)) {
+        return alert("Invalid address");
+    }
+
+    try {
+        await contract.methods.adminAddUser(userAddr, refAddr).send({ from: userAccount });
+        alert("User added for free");
+        updateDashboard();
+    } catch(e) {
+        alert("Error: " + e.message);
+    }
+}
+
+function copy() {
+    const input = document.getElementById('refLink');
+    if (input.value.includes("LIMIT")) return;
+    input.select();
+    navigator.clipboard.writeText(input.value);
+    alert("Link copied!");
+}
+
+window.onload = () => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('ref')) {
+        document.getElementById('refInput').value = params.get('ref');
+    }
+};
 </script>
 </body>
 </html>
