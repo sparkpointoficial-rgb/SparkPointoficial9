@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SparkBNB — Личный кабинет</title>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; background: #0f0f1a; color: #fff; margin:0; padding:20px; }
+    .container { max-width: 1100px; margin: auto; }
+    .header { display:flex; justify-content:space-between; align-items:center; padding:15px; background:#1a1a2e; border-radius:12px; margin-bottom:20px; }
+    .balance { font-size:28px; font-weight:bold; color:#00ff88; }
+    .level { background:#16213e; padding:10px 20px; border-radius:50px; font-size:18px; }
+    .tree { margin-top:30px; }
+    .level-row { margin-bottom:40px; }
+    .level-title { font-size:22px; margin-bottom:10px; color:#00ccff; }
+    .circles { display:flex; flex-wrap:wrap; gap:15px; justify-content:center; }
+    .circle { width:70px; height:70px; border-radius:50%; background:#222; border:4px solid #444; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:bold; transition: all 0.4s; }
+    .circle.filled { background:#00ff88; border-color:#00cc66; color:#000; box-shadow:0 0 20px #00ff88; }
+    .info { background:#16213e; padding:20px; border-radius:12px; margin:20px 0; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>SparkBNB</h1>
+    <button onclick="connectWallet()" id="connectBtn">Подключить кошелёк</button>
+  </div>
+
+  <div class="info">
+    <p><strong>Твой реферер (папа):</strong> <span id="referrer">—</span></p>
+    <p><strong>Внутренний баланс:</strong> <span class="balance" id="internalBalance">0 BNB</span></p>
+    <p><strong>Текущий уровень:</strong> <span class="level" id="userLevel">1</span></p>
+  </div>
+
+  <div class="tree" id="treeContainer">
+    <!-- Круги будут генерироваться JS -->
+  </div>
+</div>
+
+<script>
+// ================== НАСТРОЙКИ КОНТРАКТА ==================
+const contractAddress = "0xТВОЙ_АДРЕС_КОНТРАКТА"; // ← замени после деплоя
+const contractABI = [ /* вставь сюда полный ABI из Remix (скопируй из компилятора) */ ];
+
+// ================== WEB3 ==================
+let web3, account, contract;
+
+async function connectWallet() {
+  if (window.ethereum) {
+    web3 = new Web3(window.ethereum);
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    account = accounts[0];
+    document.getElementById('connectBtn').innerHTML = `✅ \( {account.slice(0,6)}... \){account.slice(-4)}`;
+    
+    contract = new web3.eth.Contract(contractABI, contractAddress);
+    loadUserData();
+  } else {
+    alert("Установи MetaMask или Trust Wallet!");
+  }
+}
+
+// ================== ЗАГРУЗКА ДАННЫХ ==================
+async function loadUserData() {
+  const user = await contract.methods.users(account).call();
+  
+  document.getElementById('userLevel').textContent = user.level;
+  document.getElementById('internalBalance').textContent = web3.utils.fromWei(user.internalBalance, 'ether') + " BNB";
+  
+  // Реферер
+  const ref = user.referrer === "0x0000000000000000000000000000000000000000" ? "— (админ)" : user.referrer;
+  document.getElementById('referrer').textContent = ref;
+
+  renderCircles(user.level);
+}
+
+// ================== ОТРИСОВКА КРУГОВ ПО ТВОЕЙ СХЕМЕ ==================
+const circleCounts = [0, 2, 6, 14, 2, 6, 14, 2, 6, 14]; // индекс = уровень
+
+function renderCircles(currentLevel) {
+  const container = document.getElementById('treeContainer');
+  container.innerHTML = '';
+
+  for (let lvl = 1; lvl <= 9; lvl++) {
+    const row = document.createElement('div');
+    row.className = 'level-row';
+    row.innerHTML = `<div class="level-title">Уровень ${lvl} — ${circleCounts[lvl]} кругов</div>`;
+    
+    const circlesDiv = document.createElement('div');
+    circlesDiv.className = 'circles';
+
+    const totalCircles = circleCounts[lvl];
+    for (let i = 0; i < totalCircles; i++) {
+      const circle = document.createElement('div');
+      circle.className = 'circle';
+      circle.textContent = i+1;
+      
+      // Симуляция заполнения (в реальной версии здесь будет проверка по дереву)
+      if (lvl <= currentLevel) {
+        // Для демо: первые несколько кругов зелёные
+        if (i < (lvl === 1 ? 2 : lvl === 2 ? 3 : 5)) {
+          circle.classList.add('filled');
+        }
+      }
+      circlesDiv.appendChild(circle);
+    }
+    row.appendChild(circlesDiv);
+    container.appendChild(row);
+  }
+}
+
+// ================== РЕГИСТРАЦИЯ ПО ССЫЛКЕ ==================
+async function registerWithRef() {
+  const urlParams = new URLSearchParams(window.location.search);
+  let referrer = urlParams.get('ref');
+  
+  if (!referrer) referrer = "0x0000000000000000000000000000000000000000"; // админ по умолчанию
+  
+  try {
+    await contract.methods.register(referrer).send({ 
+      from: account, 
+      value: web3.utils.toWei('0.001', 'ether') 
+    });
+    alert("Пакет активирован! Обновляю данные...");
+    loadUserData();
+  } catch(e) { alert("Ошибка: " + e.message); }
+}
+
+// Автозапуск при загрузке
+window.onload = () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('ref')) {
+    console.log("Приглашение от:", urlParams.get('ref'));
+  }
+};
+</script>
+</body>
+</html>
+
